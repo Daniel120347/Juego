@@ -1,0 +1,115 @@
+        }
+
+        function startGame() {
+            currentLetter = getRandomLetter();
+            document.getElementById('letterDisplay').textContent = currentLetter;
+            document.getElementById('letterDisplay').style.display = 'flex';
+            document.getElementById('letterDisplay').classList.add('pulse');
+            
+            setTimeout(() => {
+                document.getElementById('letterDisplay').classList.remove('pulse');
+            }, 1000);
+
+            document.getElementById('gameForm').style.display = 'grid';
+            document.getElementById('timer').style.display = 'block';
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('results').style.display = 'none';
+            
+            // Limpiar campos
+            const inputs = document.querySelectorAll('#gameForm input');
+            inputs.forEach(input => input.value = '');
+            
+            // Iniciar timer
+            timeLeft = 125;
+            gameActive = true;
+            updateTimer();
+            startTimer();
+            
+            // Focus en el primer input
+            document.getElementById('nombre').focus();
+        }
+
+        function startTimer() {
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                
+                if (timeLeft <= 0) {
+                    submitAnswers();
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            const timerElement = document.getElementById('timer');
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.textContent = `⏰ Tiempo restante: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 30) {
+                timerElement.style.color = '#e74c3c';
+                timerElement.style.animation = 'pulse 1s infinite';
+            }
+        }
+
+        function submitAnswers() {
+            if (!gameActive) return;
+            
+            gameActive = false;
+            clearInterval(gameTimer);
+            
+            document.getElementById('gameForm').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('timer').style.display = 'none';
+            
+            const results = document.getElementById('results');
+            results.style.display = 'block';
+            
+            let correctAnswers = 0;
+            let resultsHTML = '<h3>📊 Resultados</h3>';
+            
+            categories.forEach(category => {
+                const input = document.getElementById(category.id);
+                const answer = input.value.trim();
+                // Validar que tenga al menos 2 caracteres y empiece con la letra correcta
+                const isCorrect = answer && 
+                                answer.length >= 2 && 
+                                answer.toLowerCase().startsWith(currentLetter.toLowerCase()) &&
+                                answer.toLowerCase() !== currentLetter.toLowerCase();
+                
+                if (isCorrect) correctAnswers++;
+                
+                resultsHTML += `
+                    <div class="result-item ${isCorrect ? 'correct' : 'incorrect'}">
+                        <span><strong>${category.name}:</strong> ${answer || 'Sin respuesta'}</span>
+                        <span>${isCorrect ? '✅' : '❌'}</span>
+                    </div>
+                `;
+            });
+            
+            const score = Math.round((correctAnswers / categories.length) * 100);
+            resultsHTML += `<div class="score">🏆 Puntuación: ${correctAnswers}/${categories.length} (${score}%)</div>`;
+            
+            results.innerHTML = resultsHTML;
+        }
+
+        // Permitir envío con Enter
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && gameActive) {
+                submitAnswers();
+            }
+        });
+
+        // Navegación con Tab entre inputs
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab' && gameActive) {
+                e.preventDefault();
+                const inputs = Array.from(document.querySelectorAll('#gameForm input'));
+                const currentIndex = inputs.findIndex(input => input === document.activeElement);
+                const nextIndex = (currentIndex + 1) % inputs.length;
+                inputs[nextIndex].focus();
+            }
+        });
+    </script>
+</body>
+</html>
